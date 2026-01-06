@@ -96,7 +96,7 @@
 </head>
 <body>
 
-    <div id="placar">Fase: <span id="fase-num">1</span>/4</div>
+    <div id="placar">Palavra: <span id="fase-num">1</span>/6</div>
     <div id="imagem-atual">🎂</div>
 
     <div class="container-slots" id="slots-container"></div>
@@ -110,7 +110,9 @@
             { termo: "BOLO", icone: "🎂" },
             { termo: "BOLA", icone: "⚽" },
             { termo: "BALA", icone: "🍬" },
-            { termo: "DOCE", icone: "🍭" }
+            { termo: "DOZE", icone: "12" },
+            { termo: "CASA", icone: "🏠" },
+            { termo: "GATO", icone: "🐱" }
         ];
 
         let faseAtual = 0;
@@ -159,54 +161,93 @@
             }
         }
 
-        function processarEntrada(letraDigitada) {
-            const palavra = listaPalavras[faseAtual].termo;
-            const letraCorreta = palavra[indiceLetraEsperada];
-            const msg = document.getElementById('mensagem');
-            const slots = document.querySelectorAll('.slot');
+// --- NOVO CÓDIGO PARA A VOZ ---
 
-            // Feedback visual no cartão
-            const btn = document.getElementById("key-" + letraDigitada);
-            if(btn) {
-                btn.classList.add('active');
-                setTimeout(() => btn.classList.remove('active'), 150);
-            }
+// Função para fazer o navegador falar a letra
+function falarLetra(letra) {
+    // Cancela qualquer fala anterior para não encavalar os sons
+    window.speechSynthesis.cancel();
+    
+    const mensagem = new SpeechSynthesisUtterance(letra.toLowerCase());
+    mensagem.lang = 'pt-BR'; // Define o idioma para Português do Brasil
+    mensagem.rate = 1.2;     // Velocidade da fala (um pouco mais rápido para parecer natural)
+    mensagem.pitch = 1.2;    // Tom da voz (um pouco mais agudo para tom infantil)
+    
+    window.speechSynthesis.speak(mensagem);
+}
 
-            if (letraDigitada === letraCorreta) {
-                // ACERTOU A LETRA
-                tocarSom(600, 'sine', 150);
-                slots[indiceLetraEsperada].innerText = letraDigitada;
-                slots[indiceLetraEsperada].style.borderStyle = "solid";
-                slots[indiceLetraEsperada].style.borderColor = "#2e7d32";
-                indiceLetraEsperada++;
-                msg.innerText = "Muito bem!";
-                msg.className = "correto";
+// Atualização da função processarEntrada para incluir a voz
+function processarEntrada(letraDigitada) {
+    const palavra = listaPalavras[faseAtual].termo;
+    const letraCorreta = palavra[indiceLetraEsperada];
+    const msg = document.getElementById('mensagem');
+    const slots = document.querySelectorAll('.slot');
 
-                // Verificando se completou a palavra
-                if (indiceLetraEsperada === palavra.length) {
-                    finalizarPalavra();
-                }
-            } else {
-                // ERROU A LETRA
-                tocarSom(150, 'sawtooth', 300, 0.05);
-                msg.innerText = "Essa letra não vem agora!";
-                msg.className = "errado";
-            }
+    // 1. FAZ O NAVEGADOR FALAR A LETRA IMEDIATAMENTE
+    falarLetra(letraDigitada);
+
+    // Feedback visual no cartão
+    const btn = document.getElementById("key-" + letraDigitada);
+    if(btn) {
+        btn.classList.add('active');
+        setTimeout(() => btn.classList.remove('active'), 150);
+    }
+
+    if (letraDigitada === letraCorreta) {
+        // ACERTOU A LETRA
+        tocarSom(600, 'sine', 150);
+        slots[indiceLetraEsperada].innerText = letraDigitada;
+        slots[indiceLetraEsperada].style.borderStyle = "solid";
+        slots[indiceLetraEsperada].style.borderColor = "#2e7d32";
+        indiceLetraEsperada++;
+        msg.innerText = "Muito bem!";
+        msg.className = "correto";
+
+        if (indiceLetraEsperada === palavra.length) {
+            finalizarPalavra();
         }
+    } else {
+        // ERROU A LETRA
+        tocarSom(150, 'sawtooth', 300, 0.05);
+        msg.innerText = "Essa letra não vem agora!";
+        msg.className = "errado";
+    }
+}
 
-        function finalizarPalavra() {
-            tocarSom(523, 'triangle', 200); 
-            setTimeout(() => tocarSom(783, 'triangle', 400), 200);
-            
-            setTimeout(() => {
-                faseAtual++;
-                if (faseAtual < listaPalavras.length) {
-                    carregarFase();
-                } else {
-                    vitoriaTotal();
-                }
-            }, 1500);
+function finalizarPalavra() {
+    const palavraFinalizada = listaPalavras[faseAtual].termo;
+
+    // Toca o som de vitória (os bipes musicais)
+    tocarSom(523, 'triangle', 200); 
+    setTimeout(() => tocarSom(783, 'triangle', 400), 200);
+    
+    // Pequena pausa para o som de vitória terminar e então fala a palavra
+    setTimeout(() => {
+        falarPalavraInteira(palavraFinalizada);
+    }, 600);
+
+    // Espera um pouco mais para a criança ouvir a palavra antes de mudar de fase
+    setTimeout(() => {
+        faseAtual++;
+        if (faseAtual < listaPalavras.length) {
+            carregarFase();
+        } else {
+            vitoriaTotal();
         }
+    }, 2500); // Aumentei para 2.5s para dar tempo de ouvir a voz
+}
+
+// Nova função auxiliar para falar a palavra completa
+function falarPalavraInteira(palavra) {
+    window.speechSynthesis.cancel(); // Para qualquer fala de letra anterior
+    
+    const mensagem = new SpeechSynthesisUtterance(palavra.toLowerCase());
+    mensagem.lang = 'pt-BR';
+    mensagem.rate = 0.9;  // Um pouco mais lento para a pronúncia ser bem clara
+    mensagem.pitch = 1.1; // Tom amigável
+    
+    window.speechSynthesis.speak(mensagem);
+}
 
         function vitoriaTotal() {
             document.getElementById('imagem-atual').innerText = "🏆";
