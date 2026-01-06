@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfabeto Mágico - Forme a Palavra</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #e8f5e9;
+            overflow-x: hidden;
+        }
+
+        #placar { font-size: 22px; color: #2e7d32; margin-top: 10px; }
+
+        #imagem-atual {
+            font-size: 100px;
+            margin: 10px 0;
+            height: 120px;
+            display: flex;
+            align-items: center;
+        }
+
+        .container-slots {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .slot {
+            width: 60px;
+            height: 60px;
+            border: 4px dashed #666;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            font-weight: bold;
+            background: white;
+        }
+
+        .alfabeto-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+            max-width: 90vw;
+            padding: 10px;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .letra-card {
+            width: 45px;
+            height: 45px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: #fff;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s;
+        }
+
+        .letra-card:active, .letra-card.active {
+            transform: scale(0.9);
+            background-color: #bbdefb;
+        }
+
+        #mensagem {
+            height: 40px;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .correto { color: #2e7d32; }
+        .errado { color: #d32f2f; }
+
+        @media (max-width: 600px) {
+            .alfabeto-grid { grid-template-columns: repeat(7, 1fr); }
+            .letra-card { width: 40px; height: 40px; font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="placar">Fase: <span id="fase-num">1</span>/4</div>
+    <div id="imagem-atual">🎂</div>
+
+    <div class="container-slots" id="slots-container"></div>
+
+    <div class="alfabeto-grid" id="alfabeto"></div>
+
+    <div id="mensagem"></div>
+
+    <script>
+        const listaPalavras = [
+            { termo: "BOLO", icone: "🎂" },
+            { termo: "BOLA", icone: "⚽" },
+            { termo: "BALA", icone: "🍬" },
+            { termo: "DOCE", icone: "🍭" }
+        ];
+
+        let faseAtual = 0;
+        let indiceLetraEsperada = 0;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function tocarSom(freq, tipo, dura, vol = 0.1) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = tipo;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            g.gain.setValueAtTime(vol, audioCtx.currentTime);
+            osc.connect(g);
+            g.connect(audioCtx.destination);
+            osc.start();
+            g.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + dura/1000);
+            setTimeout(() => osc.stop(), dura);
+        }
+
+        function criarAlfabeto() {
+            const container = document.getElementById('alfabeto');
+            const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('');
+            letras.forEach(l => {
+                const btn = document.createElement('div');
+                btn.classList.add('letra-card');
+                btn.innerText = l;
+                btn.id = "key-" + l;
+                btn.onclick = () => processarEntrada(l);
+                container.appendChild(btn);
+            });
+        }
+
+        function carregarFase() {
+            const dados = listaPalavras[faseAtual];
+            indiceLetraEsperada = 0;
+            document.getElementById('fase-num').innerText = faseAtual + 1;
+            document.getElementById('imagem-atual').innerText = dados.icone;
+            document.getElementById('mensagem').innerText = "";
+            
+            const slotsContainer = document.getElementById('slots-container');
+            slotsContainer.innerHTML = "";
+            for(let i=0; i < dados.termo.length; i++) {
+                const s = document.createElement('div');
+                s.classList.add('slot');
+                slotsContainer.appendChild(s);
+            }
+        }
+
+        function processarEntrada(letraDigitada) {
+            const palavra = listaPalavras[faseAtual].termo;
+            const letraCorreta = palavra[indiceLetraEsperada];
+            const msg = document.getElementById('mensagem');
+            const slots = document.querySelectorAll('.slot');
+
+            // Feedback visual no cartão
+            const btn = document.getElementById("key-" + letraDigitada);
+            if(btn) {
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 150);
+            }
+
+            if (letraDigitada === letraCorreta) {
+                // ACERTOU A LETRA
+                tocarSom(600, 'sine', 150);
+                slots[indiceLetraEsperada].innerText = letraDigitada;
+                slots[indiceLetraEsperada].style.borderStyle = "solid";
+                slots[indiceLetraEsperada].style.borderColor = "#2e7d32";
+                indiceLetraEsperada++;
+                msg.innerText = "Muito bem!";
+                msg.className = "correto";
+
+                // Verificando se completou a palavra
+                if (indiceLetraEsperada === palavra.length) {
+                    finalizarPalavra();
+                }
+            } else {
+                // ERROU A LETRA
+                tocarSom(150, 'sawtooth', 300, 0.05);
+                msg.innerText = "Essa letra não vem agora!";
+                msg.className = "errado";
+            }
+        }
+
+        function finalizarPalavra() {
+            tocarSom(523, 'triangle', 200); 
+            setTimeout(() => tocarSom(783, 'triangle', 400), 200);
+            
+            setTimeout(() => {
+                faseAtual++;
+                if (faseAtual < listaPalavras.length) {
+                    carregarFase();
+                } else {
+                    vitoriaTotal();
+                }
+            }, 1500);
+        }
+
+        function vitoriaTotal() {
+            document.getElementById('imagem-atual').innerText = "🏆";
+            document.getElementById('mensagem').innerText = "PARABÉNS! VOCÊ É UM GÊNIO!";
+            document.getElementById('alfabeto').innerHTML = "<button onclick='location.reload()' style='grid-column: span 9; padding:15px; font-size:20px; cursor:pointer; background:#2e7d32; color:white; border:none; border-radius:10px;'>Jogar de Novo</button>";
+        }
+
+        // Ouvinte de teclado físico
+        window.addEventListener('keydown', (e) => {
+            const letra = e.key.toUpperCase();
+            if (letra.length === 1 && letra >= 'A' && letra <= 'Z') {
+                processarEntrada(letra);
+            }
+        });
+
+        criarAlfabeto();
+        carregarFase();
+    </script>
+</body>
+</html>
