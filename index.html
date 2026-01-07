@@ -283,14 +283,14 @@
             document.getElementById('slots-container').innerHTML = "";
             document.getElementById('placar').style.visibility = "hidden";
             
-            document.getElementById('imagem-atual').innerText = "🏆";
+            document.getElementById('imagem-atual').innerText = "🎉";
             const msgFinal = "Parabéns " + participante + "! Você acertou todas as palavras!";
             document.getElementById('mensagem').innerText = msgFinal;
             document.getElementById('mensagem').className = "correto";
             
             // Botão centralizado e responsivo
             document.getElementById('alfabeto').style.display = "block";
-            document.getElementById('alfabeto').innerHTML = `<button class="btn-principal" onclick="location.reload()">Jogar de Novo</button>`;
+            document.getElementById('alfabeto').innerHTML = `<button class="btn-principal" onclick="location.reload()">Jogar de novo</button>`;
             
             // Som de festa (Acordes)
             tocarSom(523, 'square', 300);
@@ -315,3 +315,4 @@
     </script>
 </body>
 </html>
+
