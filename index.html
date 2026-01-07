@@ -22,14 +22,17 @@
 
         #tela-inicial, #jogo-container {
             background-color: white;
-            padding: 40px;
-            border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             border: 8px solid #ffffff;
             text-align: center;
-            max-width: 90%;
-            width: 100%;
+            max-width: 400px;
+            width: 90%;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 { color: #1976d2; margin-bottom: 5px; }
@@ -47,25 +50,54 @@
 
         #placar { font-size: 22px; color: #2e7d32; margin-top: 10px; }
         #imagem-atual { font-size: 100px; margin: 10px 0; height: 120px; display: flex; align-items: center; justify-content: center; }
-        .container-slots { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap; }
         
+        /* Garante que os quadrados fiquem sempre na mesma linha */
+        .container-slots {
+        display: flex;
+        flex-wrap: nowrap; /* Impede a quebra de linha */
+        gap: 8px;
+        margin-bottom: 20px;
+        justify-content: center;
+        width: 95%; /* Evita tocar as bordas da tela */
+        }
+        
+        /* Ajusta os quadrados para diminuírem se a tela for pequena */
         .slot {
-            width: 60px; height: 60px; border: 4px dashed #666; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 35px; font-weight: bold; background: white;
+        width: 12vw; /* Largura relativa à tela */
+        height: 12vw;
+        max-width: 60px;
+        max-height: 60px;
+        min-width: 40px; /* Garante que não fiquem minúsculos */
+        min-height: 40px;
+        border: 3px dashed #666;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: clamp(20px, 5vw, 35px); /* Fonte ajustável */
+        background: white;
         }
 
+        /* Ajusta o alfabeto para caber dentro da área branca */
         .alfabeto-grid {
-            display: grid; grid-template-columns: repeat(9, 1fr); gap: 8px;
-            max-width: 90vw; padding: 10px; background: #fff; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        display: grid;
+        grid-template-columns: repeat(7, 1fr); /* 7 colunas cabe melhor no mobile */
+        gap: 5px;
+        width: 100%; /* Ocupa a largura total do container pai */
+        box-sizing: border-box; /* Garante que o padding não aumente o tamanho */
+        padding: 10px;
         }
 
         .letra-card {
-            width: 45px; height: 45px; border: 2px solid #ccc; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 24px; font-weight: bold; background-color: #fff;
-            cursor: pointer; transition: all 0.1s;
+        width: auto; /* Deixa o grid controlar a largura */
+        aspect-ratio: 1 / 1; /* Mantém o cartão quadrado */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
         }
 
         .letra-card.active { transform: scale(0.9); background-color: #bbdefb; }
@@ -180,6 +212,20 @@
                 btn.onclick = () => processarEntrada(l);
                 container.appendChild(btn);
             });
+        }
+
+        function falarLetra(letra) {
+            window.speechSynthesis.cancel();
+    
+            // Convertendo para minúsculo antes de enviar para a síntese de voz
+            const somLetra = letra.toLowerCase();
+            const mensagem = new SpeechSynthesisUtterance(somLetra);
+    
+            mensagem.lang = 'pt-BR';
+            mensagem.rate = 1.2;
+            mensagem.pitch = 1.0;
+    
+            window.speechSynthesis.speak(mensagem);
         }
 
         function carregarFase() {
